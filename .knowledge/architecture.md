@@ -17,6 +17,7 @@
 ## Notas de versión
 
 - Next.js 16: el archivo de middleware se llama `proxy.ts` (no `middleware.ts`)
+- Next.js 16: la función exportada debe llamarse `proxy` (no `middleware`)
 
 ## P03 — AI Writing Studio
 
@@ -45,3 +46,16 @@
 - Source attribution: cada respuesta incluye chunks usados con similarity score
 - Rutas protegidas: /app/(dashboard)/documents/ y /app/(dashboard)/chat/
 - Auth check en API routes: createClient().auth.getUser() antes de procesar
+
+## P08 — Content Pipeline
+
+- Pipeline secuencial: 6 agentes encadenados (idea → research → draft → edit → seo → publish)
+- Cada agente: función async run(input: StageInput): Promise<StageOutput>
+- Handoff: el output.content de cada stage se pasa como previousOutput al siguiente
+- Orquestador: itera STAGES en secuencia, captura errores por stage sin abortar el pipeline
+- Persistencia: runs guardados en output/{runId}.json (output/ en .gitignore)
+- Streaming: SSE via ReadableStream nativo (sin @anthropic-ai/sdk streaming)
+- onProgress callback: permite emitir eventos SSE por stage al frontend
+- react-markdown: requiere prop `components` explícita para estilos — sin @tailwindcss/typography
+- markdownComponents: extraído a módulo compartido (components/markdown-components.tsx)
+- publishContent: capturar en evento SSE de stage 'publish', no en evento 'done'
