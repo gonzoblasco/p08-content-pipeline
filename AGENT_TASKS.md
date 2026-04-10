@@ -1,156 +1,149 @@
-# AGENT_TASKS.md — P07 AI Code Reviewer
+# AGENT_TASKS.md — P08 Content Pipeline
 
 ## Estado general
 
 - Fase actual: 4 — Cierre
-- Última task completada: T14
+- Última task completada: T11
 - Próxima task: —
 
 ## Contexto del proyecto
 
-Bot de GitHub que analiza PRs con subagents paralelos y comenta resultados automáticamente.
-Trigger: GitHub Webhook en eventos de PR (opened, synchronize).
-Orquestación: Codex CLI lanza 3 subagents en paralelo — security-audit, test-coverage, conventions.
-Output: comentario consolidado en el PR via MCP GitHub.
+Pipeline multi-agente secuencial: idea → research → draft → edit → SEO check → publish.
+Cada agente recibe el output del anterior como input estructurado (handoff explícito).
+UI: dashboard Next.js para triggear el pipeline y ver el progreso por etapa.
+Output final: archivo markdown listo para publicar.
 
-Stack: Next.js 16 · TypeScript · Tailwind · shadcn/ui · Anthropic API · Codex CLI · MCP GitHub
-Sin Supabase — no hay persistencia en este proyecto.
+Stack: Next.js 16 · TypeScript · Tailwind · shadcn/ui · Anthropic API
+Sin Supabase · Sin webhooks · Sin MCP externo
+
+## Workflow de branches y PRs
+
+Cada task se implementa en su propio branch:
+git checkout -b task/T01-nombre
+Commit + push + PR a main.
+Correr pr-review skill antes de mergear.
+Mergear solo cuando pr-review aprueba.
 
 ---
 
-## FASE 1 — Webhook + scaffold
+## FASE 1 — Scaffold + limpieza
 
-### T01 — Limpieza de P06
+### T01 — Limpieza de P07
 
-- Eliminar `/mcp-server` (directorio completo)
-- Eliminar rutas específicas de P06: `app/dashboard/*`, `app/api/analyze-error`
-- Limpiar `package.json`: quitar dependencias de express, @modelcontextprotocol/sdk
-- Actualizar `.env.local.example` con vars de P07 (sin N8N_API_KEY, sin MCP_SERVER_URL)
-- Status: [x] completo
-
-### T02 — Webhook handler
-
-- Crear `app/api/webhook/route.ts`
-- Validar firma HMAC con `GITHUB_WEBHOOK_SECRET`
-- Filtrar solo eventos `pull_request` con action `opened` o `synchronize`
-- Extraer: repo owner, repo name, PR number, head SHA
-- Responder 200 inmediatamente (el análisis corre async)
-- Status: [x] completo
-
-### T03 — GitHub client
-
-- Crear `lib/github.ts`
-- Funciones: `getPRDiff(owner, repo, prNumber)` y `postComment(owner, repo, prNumber, body)`
-- Auth: `GITHUB_TOKEN` via Authorization header
+- Eliminar `app/api/webhook/`
+- Eliminar `lib/github.ts`, `lib/orchestrator.ts`, `lib/agents/`
+- Limpiar `package.json`: quitar dependencias no usadas de P07
+- Actualizar `.env.local.example` con solo `ANTHROPIC_API_KEY`
+- Actualizar `CLAUDE.md` y `README.md` con contexto de P08
+- Branch: `task/T01-scaffold`
 - Status: [x] completo
 
 ---
 
-## FASE 2 — Subagents
+## FASE 2 — Core del pipeline
 
-### T04 — Orchestrator
+### T02 — Tipos y contratos de handoff
 
-- Crear `lib/orchestrator.ts`
-- Recibe el diff del PR
-- Lanza los 3 subagents en paralelo via `Promise.all`
-- Consolida resultados en un único string markdown
+- Crear `lib/pipeline/types.ts`
+- Definir `PipelineStage`, `StageInput`, `StageOutput`, `PipelineRun`, `StageResult`
+- Branch: `task/T02-types`
 - Status: [x] completo
 
-### T05 — Subagent: security-audit
+### T03 — Agentes del pipeline (6 agentes)
 
-- Crear `lib/agents/security-audit.ts`
-- System prompt: rol de security reviewer — detecta inyecciones, secrets hardcodeados, inputs sin sanitizar, deps vulnerables
-- Input: diff completo del PR
-- Output: lista de issues con severidad (critical / warning / info) o "✅ Sin issues"
+- Crear `lib/pipeline/agents/`: idea, research, draft, edit, seo, publish
+- Cada agente: función async `run(input: StageInput): Promise<StageOutput>`
+- Modelo: claude-sonnet-4-6, max_tokens: 2000
+- Branch: `task/T03-agents`
 - Status: [x] completo
 
-### T06 — Subagent: test-coverage
+### T04 — Orquestador secuencial
 
-- Crear `lib/agents/test-coverage.ts`
-- System prompt: rol de QA reviewer — evalúa si los cambios tienen tests, detecta casos edge no cubiertos
-- Input: diff completo del PR
-- Output: evaluación de cobertura + casos sugeridos o "✅ Cobertura adecuada"
+- Crear `lib/pipeline/orchestrator.ts`
+- Ejecuta los 6 agentes en secuencia, pasando output → input
+- Emite eventos de progreso por stage via callback `onProgress`
+- Maneja errores por stage sin abortar el pipeline completo
+- Persiste el run en `output/{runId}.json`
+- Branch: `task/T04-orchestrator`
 - Status: [x] completo
 
-### T07 — Subagent: conventions
+### T05 — API route del pipeline
 
-- Crear `lib/agents/conventions.ts`
-- System prompt: rol de code reviewer — verifica naming, estructura de archivos, imports, patrones del proyecto
-- Input: diff completo del PR
-- Output: lista de desviaciones o "✅ Convenciones respetadas"
+- Crear `app/api/pipeline/route.ts`
+- POST: recibe `{ topic: string }`, lanza el pipeline, retorna SSE con progreso
+- Branch: `task/T05-api`
 - Status: [x] completo
 
 ---
 
-## FASE 3 — Integración end-to-end
+## FASE 3 — UI
 
-### T08 — Conectar webhook → orchestrator → comentario
+### T06 — Dashboard principal
 
-- En el webhook handler, llamar `getPRDiff` → `orchestrator` → `postComment`
-- Formato del comentario: secciones separadas por subagent con emojis de estado
-- Agregar header fijo: `## 🤖 AI Code Review`
+- `app/dashboard/page.tsx` — formulario de input + botón "Run Pipeline"
+- `components/StageCard.tsx` — card por stage con estado y contenido
+- Streaming del progreso via SSE en tiempo real
+- Branch: `task/T06-ui`
 - Status: [x] completo
 
-### T09 — Dashboard mínimo (opcional)
+### T07 — Output viewer
 
-- `app/dashboard/page.tsx` — lista los últimos PRs analizados (en memoria / array estático)
-- Solo si queda tiempo — no es el entregable principal
-- Status: [ ] pendiente
+- `components/OutputViewer.tsx` — markdown renderizado con react-markdown
+- Botón de descarga del archivo `.md`
+- Branch: `task/T07-output`
+- Status: [x] completo
 
 ---
 
 ## FASE 4 — Skills + cierre
 
-### T10 — Skill: security-audit
+### T08 — Skill: content-pipeline
 
-- Crear `.agents/skills/security-audit/SKILL.md`
-- Documentar el system prompt, input/output esperado, y cómo invocarlo
+- Crear `.agents/skills/content-pipeline/SKILL.md`
+- Documenta el patrón de pipeline secuencial con handoffs
+- Branch: `task/T08-skill-pipeline`
 - Status: [x] completo
 
-### T11 — Skill: test-coverage
+### T09 — Skill: seo-agent
 
-- Crear `.agents/skills/test-coverage/SKILL.md`
+- Crear `.agents/skills/seo-agent/SKILL.md`
+- Branch: `task/T09-skill-seo`
 - Status: [x] completo
 
-### T12 — Skill: conventions
+### T10 — PR Review final
 
-- Crear `.agents/skills/conventions/SKILL.md`
-- Status: [x] completo
-
-### T13 — PR Review
-
-- Invocar `@.agents/skills/pr-review/SKILL.md`
+- Invocar `@.agents/skills/pr-review/SKILL.md` sobre el estado completo del repo
 - Resolver todos los issues bloqueantes antes de cerrar
+- Branch: `task/T10-pr-review`
 - Status: [x] completo
 
-### T14 — Commit final y cierre
+### T11 — Commit de cierre
 
-- Conventional commit por fase
-- Actualizar curriculum map (P07 → completo)
+- Marcar todas las tasks como [x]
+- Agregar sección de Cierre con fecha, estado, deuda documentada
+- Branch: `task/T11-close`
 - Status: [x] completo
 
 ---
 
 ## Decisiones de arquitectura
 
-- Los subagents son funciones async simples (no procesos separados) — Codex CLI los orquesta via Promise.all
-- El webhook responde 200 antes de que termine el análisis para evitar timeout de GitHub (10s límite)
-- El diff completo se pasa a cada subagent — no se fragmenta (PRs grandes pueden requerir truncado en iteraciones futuras)
-- Sin base de datos — el historial de análisis no persiste en esta versión
-- GITHUB_TOKEN necesita permisos: `repo` (read) + `pull_requests` (write)
+- Pipeline secuencial (no paralelo) — el output de cada stage alimenta el siguiente
+- SSE para streaming del progreso al frontend — mismo patrón que P03
+- Sin persistencia en DB — los runs se guardan como archivos markdown en /output
+- Errores por stage: el pipeline continúa con el output parcial disponible
 
----
+## Deuda documentada desde P07
 
-## Deuda documentada desde P06
-
-- SSE parsing duplicado identificado en P06 — candidato a `lib/mcp-client.ts` si se usa MCP en fases futuras
+- Validación de env vars en startup — pendiente para P09
+- User-Agent en clientes HTTP — pendiente para P09
 
 ---
 
 ## Cierre
 
-- Fecha: 2026-04-07
+- Fecha: 2026-04-10
 - Estado: COMPLETO
 - PR Review: aprobado con fixes aplicados
-- Issues bloqueantes resueltos: after() para serverless async, Promise.allSettled en orchestrator
-- Deuda documentada: validación de env vars en startup, User-Agent en GitHub client
+- Issues bloqueantes resueltos: restos de P07 eliminados, output/ en .gitignore, redirect en home, import alias corregido, markdownComponents extraído
+- Deuda documentada: Anthropic client compartido (una instancia por agente actualmente), sin tests para agentes ni orquestador
