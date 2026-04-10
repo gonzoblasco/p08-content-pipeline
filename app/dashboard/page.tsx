@@ -78,13 +78,11 @@ export default function DashboardPage() {
                 }
                 return [...prev, updated];
               });
+              if (event.stage === 'publish' && event.status === 'completed') {
+                setPublishContent(event.content);
+              }
             } else if (event.type === 'done') {
               setRunId(event.runId);
-              setStages((prev) => {
-                const pub = prev.find((s) => s.stage === 'publish');
-                if (pub?.content) setPublishContent(pub.content);
-                return prev;
-              });
             } else if (event.type === 'error') {
               setError(event.message ?? 'Pipeline error');
             }
