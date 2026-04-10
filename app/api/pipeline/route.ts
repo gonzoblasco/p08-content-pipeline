@@ -1,5 +1,5 @@
-import { runPipeline } from "../../../lib/pipeline/orchestrator";
-import type { StageResult } from "../../../lib/pipeline/types";
+import { runPipeline } from "@/lib/pipeline/orchestrator";
+import type { StageResult } from "@/lib/pipeline/types";
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => ({}));
