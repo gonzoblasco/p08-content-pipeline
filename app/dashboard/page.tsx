@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { StageCard } from '@/components/StageCard';
+import { OutputViewer } from '@/components/OutputViewer';
 
 type StageStatus = 'running' | 'completed' | 'failed';
 
@@ -17,6 +18,7 @@ export default function DashboardPage() {
   const [stages, setStages] = useState<StageEvent[]>([]);
   const [running, setRunning] = useState(false);
   const [runId, setRunId] = useState<string | null>(null);
+  const [publishContent, setPublishContent] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const handleRun = async () => {
@@ -24,6 +26,7 @@ export default function DashboardPage() {
 
     setStages([]);
     setRunId(null);
+    setPublishContent(null);
     setError(null);
     setRunning(true);
 
@@ -77,6 +80,11 @@ export default function DashboardPage() {
               });
             } else if (event.type === 'done') {
               setRunId(event.runId);
+              setStages((prev) => {
+                const pub = prev.find((s) => s.stage === 'publish');
+                if (pub?.content) setPublishContent(pub.content);
+                return prev;
+              });
             } else if (event.type === 'error') {
               setError(event.message ?? 'Pipeline error');
             }
@@ -137,6 +145,13 @@ export default function DashboardPage() {
         <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-md text-sm text-green-800">
           Pipeline completado. Run ID: <span className="font-mono">{runId}</span>
         </div>
+      )}
+
+      {runId && publishContent && (
+        <OutputViewer
+          content={publishContent}
+          filename={`${topic.toLowerCase().replace(/\s+/g, '-').slice(0, 40)}-${runId}.md`}
+        />
       )}
     </main>
   );
