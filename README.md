@@ -1,86 +1,87 @@
-# P07 — AI Code Reviewer
+# 🚀 P08 — Multi-Agent Content Pipeline
 
-Bot de GitHub que analiza Pull Requests con subagents paralelos y comenta los resultados automáticamente.
+Sistema de orquestación de agentes de IA diseñado para transformar una simple idea en contenido editorial de alta calidad, optimizado para SEO y listo para publicar.
 
-## ¿Qué hace?
+![Next.js](https://img.shields.io/badge/Next.js-16-black?style=flat-square&logo=next.js)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=flat-square&logo=typescript)
+![Tailwind](https://img.shields.io/badge/Tailwind-4-38B2AC?style=flat-square&logo=tailwind-css)
+![Anthropic](https://img.shields.io/badge/Anthropic-Claude%204.6-7C3AED?style=flat-square)
 
-- Escucha eventos de PR via GitHub Webhook
-- Lanza 3 subagents en paralelo, cada uno con un rol específico:
-  - **security-audit** — detecta vulnerabilidades y patrones inseguros
-  - **test-coverage** — evalúa cobertura y casos faltantes
-  - **conventions** — verifica naming, estructura y convenciones del proyecto
-- Consolida los resultados y los postea como comentario en el PR
+## ✨ Características Principales
 
-## Stack
+- 🤖 **Multi-Agent Pipeline**: 6 agentes especializados trabajando en secuencia.
+- 🔄 **Handoff Estructurado**: Cada etapa valida y refina el trabajo del agente anterior.
+- 📡 **Live Streaming**: Visualización en tiempo real del progreso de cada agente vía SSE.
+- 📝 **Markdown Output**: Generación de archivos listos para sistemas CMS o generadores de sitios estáticos.
+- ⚡ **Arquitectura Moderna**: Construido sobre Next.js 16 con React 19 y Server Actions.
 
-- Next.js 16 + TypeScript (webhook handler)
-- Codex CLI (orquestación de subagents)
-- MCP GitHub (leer diffs, postear comentarios)
-- Anthropic claude-sonnet-4-6 (modelo de cada subagent)
+## 🏗️ Arquitectura del Pipeline
 
-## Setup
+El pipeline opera de forma secuencial, asegurando que cada etapa tenga todo el contexto necesario para producir el mejor resultado.
 
-### 1. Variables de entorno
-
-Copiar `.env.local.example` a `.env.local` y completar:
-
-```env
-# Anthropic
-ANTHROPIC_API_KEY=
-
-# GitHub
-GITHUB_TOKEN=          # Personal access token con permisos de PR read/write
-GITHUB_WEBHOOK_SECRET= # Secret configurado en el webhook de GitHub
+```text
+[ Idea Generator ] → [ Deep Researcher ] → [ Content Drafter ]
+                                                    ↓
+[ Meta-Exporter ] ← [ SEO Optimizer ]    ← [ Senior Editor ]
 ```
 
-### 2. Instalar dependencias
+### 📋 Etapas del Pipeline
+
+1.  **Idea**: Refina el concepto inicial y define el ángulo editorial.
+2.  **Research**: Recopila información clave, datos y puntos de interés.
+3.  **Draft**: Redacta la primera versión estructurada del contenido.
+4.  **Edit**: Pule el tono, la claridad y la fluidez narrativa.
+5.  **SEO**: Optimiza encabezados, keywords y metadatos.
+6.  **Publish**: Formatea el resultado final en Markdown profesional.
+
+## 💻 Tech Stack
+
+- **Core**: Next.js 16 (App Router) + TypeScript
+- **Agent Orchestration**: Custom sequential logic in `lib/pipeline`
+- **AI Model**: Claude 3.5 Sonnet (Anthropic SDK)
+- **UI/UX**: Tailwind CSS + shadcn/ui + Lucide Icons
+- **Real-time**: Server-Sent Events (SSE) para el dashboard
+- **Testing**: Vitest para la lógica de orquestación
+
+## 🚀 Inicio Rápido
+
+### 1. Requisitos Previos
+
+- Node.js 18+
+- Anthropic API Key
+
+### 2. Instalación
 
 ```bash
+git clone ...
+cd p08-content-pipeline
 npm install
 ```
 
-### 3. Exponer el webhook en desarrollo
+### 3. Configuración
 
-```bash
-# Usar ngrok o similar para exponer localhost
-ngrok http 3000
-# Configurar la URL pública en GitHub → Settings → Webhooks
+Crea un archivo `.env.local` basado en `.env.example`:
+
+```env
+ANTHROPIC_API_KEY=your_key_here
 ```
 
-### 4. Levantar el servidor
+### 4. Lanzar Aplicación
 
 ```bash
 npm run dev
 ```
 
-## Arquitectura
+Accede a `http://localhost:3000/dashboard` para comenzar a generar contenido.
 
-```
-GitHub PR event
-  → Webhook (Next.js /api/webhook)
-    → Codex CLI orchestrator
-      → subagent: security-audit  (paralelo)
-      → subagent: test-coverage   (paralelo)
-      → subagent: conventions     (paralelo)
-    → Consolidar resultados
-  → MCP GitHub → comentario en PR
-```
+## 📁 Estructura del Proyecto
 
-## Skills entregadas
+- `app/api/pipeline`: Endpoint que maneja el streaming del pipeline.
+- `app/dashboard`: Interfaz de usuario para control y progreso.
+- `lib/pipeline/agents`: Definición de los prompts y lógica de cada agente.
+- `lib/pipeline/orchestrator.ts`: Motor de ejecución y gestión de handoffs.
+- `output/`: Directorio donde se persisten los resultados de cada ejecución.
 
-- `security-audit` — análisis de vulnerabilidades en diffs
-- `test-coverage` — evaluación de cobertura por cambio
-- `conventions` — revisión de convenciones del proyecto
-- `pr-review` — actualización del skill existente (ya en toolkit)
+---
 
-## Desarrollo
-
-```bash
-npm run dev      # Next.js en localhost:3000
-npm run build    # build de producción
-npm run lint     # ESLint
-```
-
-## Currículum
-
-Proyecto 07 del Full Stack AI Developer curriculum. Primer proyecto multi-agente con subagents paralelos y orquestación via Codex CLI.
+*Este proyecto es el número 08 del currículum **Full Stack AI Developer**, enfocado en la orquestación secuencial y contratos de interfaz entre agentes.*

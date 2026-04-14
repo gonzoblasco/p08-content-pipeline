@@ -47,20 +47,20 @@
     "vite-tsconfig-paths": "^6.1.1",
     "vitest": "^4.1.2"
   },
-  "description": "Bot de GitHub que analiza Pull Requests con subagents paralelos y comenta los resultados automáticamente.",
+  "description": "Multi-agent sequential orchestration pipeline for high-quality content generation.",
   "main": "index.js",
   "directories": {
     "lib": "lib"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/gonzoblasco/p07-ai-code-reviewer.git"
+    "url": "git+https://github.com/gonzoblasco/p08-content-pipeline.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/gonzoblasco/p07-ai-code-reviewer/issues"
+    "url": "https://github.com/gonzoblasco/p08-content-pipeline/issues"
   },
-  "homepage": "https://github.com/gonzoblasco/p07-ai-code-reviewer#readme"
+  "homepage": "https://github.com/gonzoblasco/p08-content-pipeline#readme"
 }

@@ -2,21 +2,21 @@
 
 ## Proyecto
 
-AI Code Reviewer — bot de GitHub que analiza PRs con subagents paralelos y comenta resultados automáticamente.
+Multi-Agent Content Pipeline — Sistema secuencial de agentes de IA que transforman una idea inicial en un artículo optimizado para SEO y listo para publicar.
 
 ## AI Feature
 
-- 3 subagents especializados en paralelo: security-audit, test-coverage, conventions
-- MCP de GitHub para leer diffs y escribir comentarios en PRs
-- Orquestación via Codex CLI con handoffs explícitos
-- Anthropic SDK (claude-sonnet-4-6) como modelo base de cada subagent
+- **Pipeline Secuencial**: 6 agentes especializados (Idea, Research, Draft, Edit, SEO, Publish).
+- **Handoff Estructurado**: Cada agente recibe el output formateado del anterior como input.
+- **Streaming en Tiempo Real**: Progreso del pipeline visualizado vía Server-Sent Events (SSE).
+- **Anthropic SDK**: Uso de Claude 3.5 Sonnet para generación de contenido de alta calidad.
 
-## Stack nuevo (respecto al scaffold)
+## Stack
 
-- GitHub Webhooks como trigger de PR events
-- MCP GitHub para lectura de diffs y escritura de comentarios
-- Codex CLI para lanzar y coordinar subagents
-- Sin Supabase — no hay persistencia en este proyecto
+- **Framework**: Next.js 16 (App Router) + TypeScript.
+- **Styling**: Tailwind CSS + shadcn/ui.
+- **Orquestación**: Lógica de pipeline personalizada en `lib/pipeline/orchestrator.ts`.
+- **Persistencia**: Local (sistema de archivos) en carpeta `output/` como archivos JSON/Markdown.
 
 ## Model
 
